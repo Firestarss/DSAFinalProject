@@ -5,6 +5,7 @@ import time
 class Cube:
 
     def __init__(self):
+        # initialize cube
         self.colors = {
         "R" : (255,000,000), "G" : (000,255,000), "B" : (000,000,255),
         "Y" : (255,255,000), "O" : (255,100,000), "W" : (255,255,255)}
@@ -27,6 +28,12 @@ class Cube:
         "R2" : [20,1,2,23,4,5,6,7,18,9,10,17,14,15,12,13,16,11,8,19,0,21,22,3]
         }
 
+    def reset(self):
+        """
+        Resets the cube to it's solved state
+        """
+        self.state = "YYYYRRRRGGGGOOOOBBBBWWWW"
+
 
     def move(self, move):
         """
@@ -37,6 +44,13 @@ class Cube:
         for val in self.moves[move]:
             out += self.state[val]
         self.state = out
+
+    def scramble(self):
+        """
+        Scrambles the cube
+        """
+        for i in range(30):
+            cube.move(random.choice(["U","R","F","U'","R'","F'","U2","R2","F2"]))
 
 
     def draw_face(self, face, window, xy, width):
@@ -92,44 +106,48 @@ class Cube:
         pygame.display.update()
 
 
-if __name__ == "__main__":
-    #initialize pygame and set up the window
-    pygame.init()
-    length = 1200
-    size = (int(length),int((length/4)*3))
-    window = pygame.display.set_mode(size)
 
-    #initialize the cube
-    cube = Cube()
-    cube.draw_cube(window)
-    time.sleep(4)
-
-    for i in range(100):
-        cube.move(random.choice(["U","R","F","U'","R'","F'","U2","R2","F2"]))
-
+def random_solve(cube, window):
     running = True
 
     tries = 0
     prev = 0
 
-    #game loop
     while running:
 
-        time = pygame.time.get_ticks()
-        # create event to exit program
-        for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    running = False
+        timer = pygame.time.get_ticks()
 
         cube.move(random.choice(["U","R","F","U'","R'","F'","U2","R2","F2"]))
         tries += 1
         if cube.state == cube.solved:
             running = False
-            print("time: " + str(time))
+            print("time: " + str(timer)
             print("moves: " + str(tries))
 
         #Draw the cube
-
-        if time>prev+1000 or cube.state == cube.solved:
+        if timer > prev + 1000 or cube.state == cube.solved:
             cube.draw_cube(window)
-            prev = time
+            prev = timer
+
+
+
+if __name__ == "__main__":
+    # initialize pygame and set up the window
+    pygame.init()
+    length = 1200
+    size = (int(length),int((length/4)*3))
+    window = pygame.display.set_mode(size)
+
+    # initialize the cube
+    cube = Cube()
+    cube.draw_cube(window)
+    time.sleep(2)
+
+    cube.scramble()
+    cube.draw_cube(window)
+    cube.random_solve(window)
+
+    # create event to exit program
+    for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
