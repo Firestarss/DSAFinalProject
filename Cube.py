@@ -104,18 +104,32 @@ if __name__ == "__main__":
     cube.draw_cube(window)
     time.sleep(4)
 
+    for i in range(100):
+        cube.move(random.choice(["U","R","F","U'","R'","F'","U2","R2","F2"]))
+
     running = True
+
+    tries = 0
+    prev = 0
 
     #game loop
     while running:
 
+        time = pygame.time.get_ticks()
         # create event to exit program
         for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
 
-        time.sleep(0.25)
         cube.move(random.choice(["U","R","F","U'","R'","F'","U2","R2","F2"]))
+        tries += 1
+        if cube.state == cube.solved:
+            running = False
+            print(time)
+            print(tries)
 
         #Draw the cube
-        cube.draw_cube(window)
+
+        if time>prev+1000 or cube.state == cube.solved:
+            cube.draw_cube(window)
+            prev = time
