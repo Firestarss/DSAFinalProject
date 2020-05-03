@@ -125,8 +125,8 @@ if __name__ == "__main__":
         tries += 1
         if cube.state == cube.solved:
             running = False
-            print(time)
-            print(tries)
+            print("time: " + str(time))
+            print("moves: " + str(tries))
 
         #Draw the cube
 
