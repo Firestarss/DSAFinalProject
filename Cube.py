@@ -1,6 +1,26 @@
+import numpy as np
 import pygame
 import random
 import time
+
+
+class Node:
+
+    def __init__(self, state, previous = None, previous_move = None, depth = 0):
+        self.previous = previous
+        self.previous_move = previous_move
+        self.state = state
+        self.depth = depth
+        self.U = None
+        self.F = None
+        self.R = None
+        self.U_prime = None
+        self.F_prime = None
+        self.R_prime = None
+        self.U2 = None
+        self.F2 = None
+        self.R2 = None
+
 
 class Cube:
 
@@ -45,12 +65,31 @@ class Cube:
             out += self.state[val]
         self.state = out
 
-    def scramble(self):
+    def sim_move(self, state, move):
+        """
+        Simulates a move without updating the actual cube
+        Returns string of new state
+        """
+        out = ''
+        for val in self.moves[move]:
+            out += state[val]
+        return out
+
+    def scramble(self, depth = random.randint(20,25)):
         """
         Scrambles the cube
         """
-        for i in range(30):
-            cube.move(random.choice(["U","R","F","U'","R'","F'","U2","R2","F2"]))
+        scramble = ""
+        for times in range(depth):
+            choices = ["U","R","F","U'","R'","F'","U2","R2","F2"]
+
+            choice = random.choice(choices)
+            if scramble == "":
+                scramble = choice
+            else:
+                scramble += " " + choice
+            self.move(choice)
+        #print(scramble)
 
 
     def draw_face(self, face, window, xy, width):
@@ -121,7 +160,7 @@ def random_solve(cube, window):
         tries += 1
         if cube.state == cube.solved:
             running = False
-            print("time: " + str(timer)
+            print("time: " + str(timer))
             print("moves: " + str(tries))
 
         #Draw the cube
@@ -129,7 +168,34 @@ def random_solve(cube, window):
             cube.draw_cube(window)
             prev = timer
 
+def backtracking(cube):
+    stack = [Node(cube.state)]
+    v_states = {stack[0].state:0}
 
+    while stack:
+        working = stack.pop(-1)
+        if working.state == cube.solved:
+            path = ""
+            while working.previous != None:
+                path += working.previous_move + " "
+                working = working.previous
+            print(path)
+            return
+        else:
+            if working.depth == 10:
+                continue
+            children = [working.U, working.F, working.R, working.U_prime, working.F_prime,
+                        working.R_prime, working.U2, working.F2, working.R2]
+            moves = ["U","F","R","U'","F'","R'","U2","F2","R2"]
+            for i in range(9):
+                temp = cube.sim_move(working.state, moves[i])
+
+                if (temp in v_states and working.depth + 1 < v_states[temp]) or temp not in v_states:
+                    v_states[temp] = working.depth + 1
+                    children[i] = Node(temp, working, moves[i], working.depth + 1)
+                    stack.append(children[i])
+
+    print("No Solution Found")
 
 if __name__ == "__main__":
     # initialize pygame and set up the window
@@ -144,8 +210,10 @@ if __name__ == "__main__":
     time.sleep(2)
 
     cube.scramble()
+    print(cube.state)
     cube.draw_cube(window)
-    cube.random_solve(window)
+    backtracking(cube)
+
 
     # create event to exit program
     for event in pygame.event.get():
