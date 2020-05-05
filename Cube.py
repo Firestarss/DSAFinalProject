@@ -75,10 +75,12 @@ class Cube:
             out += state[val]
         return out
 
-    def scramble(self, depth = random.randint(20,25)):
+    def scramble(self, depth = random.randint(20,25), disp = False, window = 0):
         """
         Scrambles the cube
         """
+        print("\n\n\n" + "="*70 +"\nScrambling...")
+        print("Scramble:")
         cube.state = cube.solved
         scramble = ""
         for times in range(depth):
@@ -89,8 +91,7 @@ class Cube:
                 scramble = choice
             else:
                 scramble += " " + choice
-            self.move(choice)
-        print("Scramble: ",scramble)
+        follow_string(self, scramble, disp, window)
 
 
     def draw_face(self, face, window, xy, width):
@@ -145,9 +146,9 @@ class Cube:
 
         pygame.display.update()
 
-def reverse_move(input):
+def reverse_move(str_in):
     output = ""
-    li = input.split(" ")
+    li = str_in.split(" ")
     for str in li:
         if len(str) == 0:
             continue
@@ -161,7 +162,7 @@ def reverse_move(input):
 
 def random_solve(cube, window):
     running = True
-
+    start = time.time()
     tries = 0
     prev = 0
 
@@ -173,11 +174,11 @@ def random_solve(cube, window):
         tries += 1
         if cube.state == cube.solved:
             running = False
-            print("time: " + str(timer))
-            print("moves: " + str(tries))
+            #print("Time:", time.time() - start, "seconds")
+            print("Moves: " + str(tries))
 
         #Draw the cube
-        if timer > prev + 1000 or cube.state == cube.solved:
+        if timer > prev + 100 or cube.state == cube.solved:
             cube.draw_cube(window)
             prev = timer
 
@@ -192,8 +193,7 @@ def backtracking(cube):
             while working.previous != None:
                 path = working.previous_move + " " + path
                 working = working.previous
-            print(path[0:-1])
-            return
+            return path[0:-1]
         else:
             if working.depth == 10:
                 continue
@@ -229,8 +229,8 @@ def BFS(cube):
                 while working.previous != None:
                     path = working.previous_move + " " + path
                     working = working.previous
-                print(path[0:-1])
-                return
+
+                return path[0:-1]
 
             if (temp not in v_states):
                 children[i] = Node(temp, working, moves[i], working.depth + 1)
@@ -270,9 +270,8 @@ def shaker_BFS(cube):
             while w_solved.previous != None:
                 path_solved += w_solved.previous_move + " "
                 w_solved = w_solved.previous
-            print(path_scrambled + reverse_move(path_solved))
 
-            return
+            return str(path_scrambled + reverse_move(path_solved))
 
         moves = ["U","F","R","U'","F'","R'","U2","F2","R2"]
         children_scrambled = [w_scrambled.U, w_scrambled.F, w_scrambled.R, w_scrambled.U_prime,
@@ -298,6 +297,19 @@ def shaker_BFS(cube):
 
     print("No Solution Found")
 
+
+def follow_string(cube, str_in, disp = False, window = 0):
+    print(str_in)
+    li = str_in.split(" ")
+    for str in li:
+        if len(str) == 0:
+            continue
+        else:
+            cube.move(str)
+            if disp:
+                cube.draw_cube(window)
+                time.sleep(0.2)
+
 if __name__ == "__main__":
     # initialize pygame and set up the window
     pygame.init()
@@ -308,16 +320,31 @@ if __name__ == "__main__":
     # initialize the cube
     cube = Cube()
     cube.draw_cube(window)
+    time.sleep(15)
+
+
+    cube.scramble(disp = True, window = window)
+    time.sleep(2)
+    print("\nSolving using random method...")
+    random_solve(cube, window)
     time.sleep(2)
 
-    cube.scramble()
-    print(cube.state)
-    cube.draw_cube(window)
-    backtracking(cube)
-    cube.scramble(8)
-    BFS(cube)
-    cube.scramble()
-    shaker_BFS(cube)
+    cube.scramble(disp = True, window = window)
+    time.sleep(2)
+    print("\n\nSolving using backtracking method...\nSolution:")
+    follow_string(cube, backtracking(cube), True, window)
+    time.sleep(2)
 
+    cube.scramble(10, True, window)
+    time.sleep(2)
+    print("\n\nSolving using Breadth First Search method...\nSolution:")
+    follow_string(cube, backtracking(cube), True, window)
+    time.sleep(2)
+
+    cube.scramble(disp = True, window = window)
+    time.sleep(2)
+    print("\n\nSolving using Double-ended Breadth First Search method...\nSolution:")
+    follow_string(cube, backtracking(cube), True, window)
+    time.sleep(2)
 
     time.sleep(10)
