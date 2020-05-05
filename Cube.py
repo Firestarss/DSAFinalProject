@@ -79,6 +79,7 @@ class Cube:
         """
         Scrambles the cube
         """
+        cube.state = cube.solved
         scramble = ""
         for times in range(depth):
             choices = ["U","R","F","U'","R'","F'","U2","R2","F2"]
@@ -89,7 +90,7 @@ class Cube:
             else:
                 scramble += " " + choice
             self.move(choice)
-        #print(scramble)
+        print("Scramble: ",scramble)
 
 
     def draw_face(self, face, window, xy, width):
@@ -144,7 +145,19 @@ class Cube:
 
         pygame.display.update()
 
-
+def reverse_move(input):
+    output = ""
+    li = input.split(" ")
+    for str in li:
+        if len(str) == 0:
+            continue
+        if str[-1] == "2":
+            output += str + " "
+        elif str[-1] == "'":
+            output += str[0] + " "
+        else:
+            output += str + "' "
+    return output
 
 def random_solve(cube, window):
     running = True
@@ -177,9 +190,9 @@ def backtracking(cube):
         if working.state == cube.solved:
             path = ""
             while working.previous != None:
-                path += working.previous_move + " "
+                path = working.previous_move + " " + path
                 working = working.previous
-            print(path)
+            print(path[0:-1])
             return
         else:
             if working.depth == 10:
@@ -194,6 +207,94 @@ def backtracking(cube):
                     v_states[temp] = working.depth + 1
                     children[i] = Node(temp, working, moves[i], working.depth + 1)
                     stack.append(children[i])
+
+    print("No Solution Found")
+
+def BFS(cube):
+    head = Node(cube.state)
+    queue = [head]
+    v_states = {head.state}
+
+    start = time.time()
+    while queue:
+        working = queue.pop(0)
+
+        children = [working.U, working.F, working.R, working.U_prime, working.F_prime,
+                    working.R_prime, working.U2, working.F2, working.R2]
+        moves = ["U","F","R","U'","F'","R'","U2","F2","R2"]
+        for i in range(9):
+            temp = cube.sim_move(working.state, moves[i])
+            if temp == cube.solved:
+                path = moves[i]
+                while working.previous != None:
+                    path = working.previous_move + " " + path
+                    working = working.previous
+                print(path[0:-1])
+                return
+
+            if (temp not in v_states):
+                children[i] = Node(temp, working, moves[i], working.depth + 1)
+                v_states.add(temp)
+                queue.append(children[i])
+
+def shaker_BFS(cube):
+    scrambled = Node(cube.state)
+    solved = Node(cube.solved)
+
+    v_scrambled = {scrambled.state:scrambled}
+    v_solved = {solved.state:solved}
+
+    q_scrambled = [scrambled]
+    q_solved = [solved]
+
+    while q_scrambled or q_solved:
+        w_scrambled = q_scrambled.pop(0)
+        w_solved = q_solved.pop(0)
+
+        if w_scrambled.state in v_solved or w_solved.state in v_scrambled:
+            print("Solution Found")
+
+            if w_scrambled.state in v_solved:
+                w_solved = v_solved[w_scrambled.state]
+            else:
+                w_scrambled = v_scrambled[w_solved.state]
+
+            path_scrambled = ""
+            path_solved = ""
+
+            while w_scrambled.previous != None:
+                path_scrambled = w_scrambled.previous_move + " " + path_scrambled
+                w_scrambled = w_scrambled.previous
+
+
+            while w_solved.previous != None:
+                path_solved += w_solved.previous_move + " "
+                w_solved = w_solved.previous
+            print(path_scrambled + reverse_move(path_solved))
+
+            return
+
+        moves = ["U","F","R","U'","F'","R'","U2","F2","R2"]
+        children_scrambled = [w_scrambled.U, w_scrambled.F, w_scrambled.R, w_scrambled.U_prime,
+                              w_scrambled.F_prime, w_scrambled.R_prime, w_scrambled.U2,
+                              w_scrambled.F2, w_scrambled.R2]
+        children_solved = [w_solved.U, w_solved.F, w_solved.R, w_solved.U_prime,
+                           w_solved.F_prime, w_solved.R_prime, w_solved.U2,
+                           w_solved.F2, w_solved.R2]
+
+        for i in range(9):
+            temp_scrambled = cube.sim_move(w_scrambled.state, moves[i])
+            temp_solved = cube.sim_move(w_solved.state, moves[i])
+
+            if (temp_scrambled not in v_scrambled and w_scrambled.depth < 6):
+                children_scrambled[i] = Node(temp_scrambled, w_scrambled, moves[i], w_scrambled.depth + 1)
+                v_scrambled[temp_scrambled] = children_scrambled[i]
+                q_scrambled.append(children_scrambled[i])
+
+            if (temp_solved not in v_solved and w_solved.depth < 6):
+                children_solved[i] = Node(temp_solved, w_solved, moves[i], w_solved.depth + 1)
+                v_solved[temp_solved] = children_solved[i]
+                q_solved.append(children_solved[i])
 
     print("No Solution Found")
 
@@ -213,9 +314,10 @@ if __name__ == "__main__":
     print(cube.state)
     cube.draw_cube(window)
     backtracking(cube)
+    cube.scramble(8)
+    BFS(cube)
+    cube.scramble()
+    shaker_BFS(cube)
 
 
-    # create event to exit program
-    for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False
+    time.sleep(10)
